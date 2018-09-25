@@ -1,0 +1,21 @@
+{
+    "Table": {
+        "TableName": "serverless-rest-api-with-dynamodb-dev-apis",
+        "KeySchema": [
+            {
+                "AttributeName": "name",
+                "KeyType": "S"
+            }
+        ],
+        "AttributeDefinitions": [
+            {
+                "AttributeName": "name",
+                "AttributeType": "S"
+            }
+        ],
+        "ProvisionedThroughput": {
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+        }
+    }
+}

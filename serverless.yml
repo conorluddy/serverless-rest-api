@@ -1,0 +1,115 @@
+service: serverless-rest-api-with-dynamodb
+
+frameworkVersion: ">=1.1.0 <2.0.0"
+
+plugins:
+  - serverless-dynamodb-local
+  - serverless-offline
+
+custom:
+  dynamodb:
+    start:
+      port: 8000
+      migrate: true
+      seed: true
+      inMemory: false
+    migration:
+      dir: offline/migrations
+    seed:
+      domain:
+        sources:
+          - table: ${self:provider.environment.DYNAMODB_TABLE}-apis
+            sources: [./data/apis.json]
+          - table: ${self:provider.environment.DYNAMODB_TABLE}-categories
+            sources: [./data/categories.json]
+      
+provider:
+  name: aws
+  runtime: nodejs4.3
+  profile: ideaapp
+  environment:
+    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}-apis"
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}-categories"
+
+functions:
+
+  apis:
+    handler: src/apis/index.list
+    events:
+      - http:
+          path: apis
+          method: get
+          cors: true
+
+  api:
+    handler: src/apis/index.get
+    events:
+      - http:
+          path: apis/{id}
+          method: get
+          cors: true
+
+
+  categories:
+    handler: src/categories/index.list
+    events:
+      - http:
+          path: categories
+          method: get
+          cors: true
+
+  category:
+    handler: src/categories/index.get
+    events:
+      - http:
+          path: categories/{id}
+          method: get
+          cors: true
+          
+resources:
+  Resources:
+    ApisDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: id
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}-apis
+
+    CategoriesDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: id
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}-categories
